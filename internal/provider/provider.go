@@ -15,29 +15,29 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// Ensure CSIProvider satisfies various provider interfaces.
-var _ provider.Provider = &CSIProvider{}
-var _ provider.ProviderWithFunctions = &CSIProvider{}
+// Ensure CISProvider satisfies various provider interfaces.
+var _ provider.Provider = &CISProvider{}
+var _ provider.ProviderWithFunctions = &CISProvider{}
 
-// CSIProvider defines the provider implementation.
-type CSIProvider struct {
+// CISProvider defines the provider implementation.
+type CISProvider struct {
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
 }
 
-// CSIProviderModel describes the provider data model.
-type CSIProviderModel struct {
+// CISProviderModel describes the provider data model.
+type CISProviderModel struct {
 	Endpoint types.String `tfsdk:"endpoint"`
 }
 
-func (p *CSIProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+func (p *CISProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "scaffolding"
 	resp.Version = p.version
 }
 
-func (p *CSIProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
+func (p *CISProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
@@ -48,8 +48,8 @@ func (p *CSIProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 	}
 }
 
-func (p *CSIProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var data CSIProviderModel
+func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var data CISProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
 
@@ -66,19 +66,19 @@ func (p *CSIProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	resp.ResourceData = client
 }
 
-func (p *CSIProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *CISProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewExampleResource,
 	}
 }
 
-func (p *CSIProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *CISProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewExampleDataSource,
 	}
 }
 
-func (p *CSIProvider) Functions(ctx context.Context) []func() function.Function {
+func (p *CISProvider) Functions(ctx context.Context) []func() function.Function {
 	return []func() function.Function{
 		NewExampleFunction,
 	}
@@ -86,7 +86,7 @@ func (p *CSIProvider) Functions(ctx context.Context) []func() function.Function 
 
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
-		return &CSIProvider{
+		return &CISProvider{
 			version: version,
 		}
 	}
