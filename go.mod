@@ -1,4 +1,4 @@
-module terraform-provider-cis-person-api
+module terraform-provider-cis
 
 go 1.22.7
 
