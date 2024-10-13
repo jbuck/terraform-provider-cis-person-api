@@ -6,9 +6,11 @@ package provider
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/function"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -51,13 +53,13 @@ func (p *CISProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 			"auth0_client_id": schema.StringAttribute{
 				Description:         "Auth0 client ID",
 				MarkdownDescription: "Auth0 client ID",
-				Required:            true,
+				Optional:            true,
 				Sensitive:           true,
 			},
 			"auth0_client_secret": schema.StringAttribute{
 				Description:         "Auth0 client secret",
 				MarkdownDescription: "Auth0 client secret",
-				Required:            true,
+				Optional:            true,
 				Sensitive:           true,
 			},
 			"person_endpoint": schema.StringAttribute{
@@ -78,8 +80,48 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		return
 	}
 
+	auth0_endpoint := os.Getenv("AUTH0_ENDPOINT")
+	auth0_client_id := os.Getenv("AUTH0_CLIENT_ID")
+	auth0_client_secret := os.Getenv("AUTH0_CLIENT_SECRET")
+	person_endpoint := os.Getenv("PERSON_ENDPOINT")
+
+	if data.Auth0Endpoint.ValueString() != "" {
+		auth0_endpoint = data.Auth0Endpoint.ValueString()
+	}
+	if data.Auth0ClientID.ValueString() != "" {
+		auth0_client_id = data.Auth0ClientID.ValueString()
+	}
+	if data.Auth0ClientSecret.ValueString() != "" {
+		auth0_client_secret = data.Auth0ClientSecret.ValueString()
+	}
+	if data.PersonEndpoint.ValueString() != "" {
+		person_endpoint = data.PersonEndpoint.ValueString()
+	}
+
+	if auth0_endpoint == "" {
+		auth0_endpoint = "auth.mozilla.auth0.com"
+	}
+	if person_endpoint == "" {
+		person_endpoint = "person.api.sso.mozilla.com"
+	}
+
 	// Configuration values are now available.
 	// if data.Endpoint.IsNull() { /* ... */ }
+
+	if auth0_client_id == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("auth0_client_id"),
+			"Missing Auth0 client ID",
+			"Client ID not found in AUTH0_CLIENT_ID environment variable or provider configuration block auth0_client_id attribute.",
+		)
+	}
+	if auth0_client_secret == "" {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("auth0_client_secret"),
+			"Missing Auth0 client secret",
+			"Client ID not found in AUTH0_CLIENT_SECRET environment variable or provider configuration block auth0_client_secret attribute.",
+		)
+	}
 
 	// Example client configuration for data sources and resources
 	client := http.DefaultClient
