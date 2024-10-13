@@ -5,8 +5,9 @@ package provider
 
 import (
 	"context"
-	"net/http"
+	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/function"
@@ -15,6 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 // Ensure CISProvider satisfies various provider interfaces.
@@ -72,6 +75,8 @@ func (p *CISProvider) Schema(ctx context.Context, req provider.SchemaRequest, re
 }
 
 func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	tflog.Info(ctx, "Configuring CIS client")
+
 	var data CISProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -99,11 +104,19 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 	}
 
 	if auth0_endpoint == "" {
-		auth0_endpoint = "auth.mozilla.auth0.com"
+		auth0_endpoint = "https://auth.mozilla.auth0.com/oauth/token"
 	}
 	if person_endpoint == "" {
 		person_endpoint = "person.api.sso.mozilla.com"
 	}
+
+	tflog.Info(ctx, "Configured CIS client", map[string]any{
+		"auth0_endpoint":      auth0_endpoint,
+		"auth0_client_id":     auth0_client_id,
+		"auth0_client_secret": auth0_client_secret,
+		"person_endpoint":     person_endpoint,
+		"HasError()":          strconv.FormatBool(resp.Diagnostics.HasError()),
+	})
 
 	// Configuration values are now available.
 	// if data.Endpoint.IsNull() { /* ... */ }
@@ -123,8 +136,44 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		)
 	}
 
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Info(ctx, "Configuring OAuth2 client")
+
+	oauth2_config := clientcredentials.Config{
+		ClientID:     auth0_client_id,
+		ClientSecret: auth0_client_secret,
+		TokenURL:     auth0_endpoint,
+		Scopes: []string{
+			"classification:workgroup",
+			"display:authenticated",
+		},
+		EndpointParams: url.Values{"audience": {"api.sso.mozilla.com"}},
+	}
+
+	oauth_token, err := oauth2_config.Token(context.TODO())
+
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Failed to initialize OAuth2 Client",
+			err.Error(),
+		)
+	}
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	tflog.Info(ctx, "Obtained OAuth2 tokens", map[string]any{
+		"AccessToken": oauth_token.AccessToken,
+		"TokenType":   oauth_token.TokenType,
+		"Expiry":      oauth_token.Expiry,
+	})
+
 	// Example client configuration for data sources and resources
-	client := http.DefaultClient
+	client := oauth2_config.Client(context.TODO())
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
