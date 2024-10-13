@@ -29,19 +29,40 @@ type CISProvider struct {
 
 // CISProviderModel describes the provider data model.
 type CISProviderModel struct {
-	Endpoint types.String `tfsdk:"endpoint"`
+	Auth0Endpoint     types.String `tfsdk:"auth0_endpoint"`
+	Auth0ClientID     types.String `tfsdk:"auth0_client_id"`
+	Auth0ClientSecret types.String `tfsdk:"auth0_client_secret"`
+	PersonEndpoint    types.String `tfsdk:"person_endpoint"`
 }
 
 func (p *CISProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	resp.TypeName = "scaffolding"
+	resp.TypeName = "cis"
 	resp.Version = p.version
 }
 
 func (p *CISProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"endpoint": schema.StringAttribute{
-				MarkdownDescription: "Example provider attribute",
+			"auth0_endpoint": schema.StringAttribute{
+				Description:         "Auth0 endpoint",
+				MarkdownDescription: "Auth0 endpoint",
+				Optional:            true,
+			},
+			"auth0_client_id": schema.StringAttribute{
+				Description:         "Auth0 client ID",
+				MarkdownDescription: "Auth0 client ID",
+				Required:            true,
+				Sensitive:           true,
+			},
+			"auth0_client_secret": schema.StringAttribute{
+				Description:         "Auth0 client secret",
+				MarkdownDescription: "Auth0 client secret",
+				Required:            true,
+				Sensitive:           true,
+			},
+			"person_endpoint": schema.StringAttribute{
+				Description:         "CIS person endpoint",
+				MarkdownDescription: "CIS person endpoint",
 				Optional:            true,
 			},
 		},

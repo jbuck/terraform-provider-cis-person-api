@@ -1,9 +1,9 @@
 terraform {
   required_providers {
-    csi = {
+    cis = {
       source = "registry.terraform.io/mozilla/cis"
     }
   }
 }
 
-provider "csi" {}
+provider "cis" {}
