@@ -5,9 +5,9 @@ package provider
 
 import (
 	"context"
-	"net/url"
 	"os"
 	"strconv"
+	"terraform-provider-cis/internal/provider/person_api"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/function"
@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 // Ensure CISProvider satisfies various provider interfaces.
@@ -107,7 +106,7 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		auth0_endpoint = "https://auth.mozilla.auth0.com/oauth/token"
 	}
 	if person_endpoint == "" {
-		person_endpoint = "person.api.sso.mozilla.com"
+		person_endpoint = "https://person.api.sso.mozilla.com"
 	}
 
 	tflog.Info(ctx, "Configured CIS client", map[string]any{
@@ -142,43 +141,26 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 
 	tflog.Info(ctx, "Configuring OAuth2 client")
 
-	oauth2_config := clientcredentials.Config{
-		ClientID:     auth0_client_id,
-		ClientSecret: auth0_client_secret,
-		TokenURL:     auth0_endpoint,
-		Scopes: []string{
-			"classification:public",
-			"classification:workgroup",
-			"display:none",
-			"display:public",
-			"display:authenticated",
-			"display:vouched",
-			"display:staff",
-		},
-		EndpointParams: url.Values{"audience": {"api.sso.mozilla.com"}},
-	}
+	client := person_api.NewClient(auth0_client_id, auth0_client_secret, "api.sso.mozilla.com", auth0_endpoint, []string{
+		// "classification:public",
+		"classification:workgroup",
+		// "display:none",
+		// "display:public",
+		// "display:authenticated",
+		// "display:vouched",
+		"display:staff",
+	}, person_endpoint)
 
-	oauth_token, err := oauth2_config.Token(context.TODO())
-
+	err := client.GetAccessToken(ctx)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Failed to initialize OAuth2 Client",
 			err.Error(),
 		)
-	}
-
-	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	tflog.Info(ctx, "Obtained OAuth2 tokens", map[string]any{
-		"AccessToken": oauth_token.AccessToken,
-		"TokenType":   oauth_token.TokenType,
-		"Expiry":      oauth_token.Expiry,
-	})
-
 	// Example client configuration for data sources and resources
-	client := oauth2_config.Client(context.TODO())
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }

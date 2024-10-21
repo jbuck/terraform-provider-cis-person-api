@@ -2,10 +2,8 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+	"terraform-provider-cis/internal/provider/person_api"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -14,9 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
-
-type Person struct {
-}
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var _ datasource.DataSource = &PeopleDataSource{}
@@ -27,7 +22,7 @@ func NewPeopleDataSource() datasource.DataSource {
 
 // PeopleDataSource defines the data source implementation.
 type PeopleDataSource struct {
-	client *http.Client
+	client *person_api.Client
 }
 
 // PeopleDataSourceModel describes the data source data model.
@@ -79,12 +74,12 @@ func (d *PeopleDataSource) Configure(ctx context.Context, req datasource.Configu
 		return
 	}
 
-	client, ok := req.ProviderData.(*http.Client)
+	client, ok := req.ProviderData.(*person_api.Client)
 
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *person_api.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -111,38 +106,19 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	//     return
 	// }
 
-	person := Person{}
+	tflog.Info(ctx, fmt.Sprintf("HTTP Request: %#v", d.client))
+
+	var person *person_api.Person
+	var err error
 
 	if data.Email.ValueString() != "" {
-		httpResp, err := d.client.Get(fmt.Sprintf("https://person.api.sso.mozilla.com/v2/user/primary_email/%s", data.Email.ValueString()))
+		person, err = d.client.GetPersonByEmail(ctx, data.Email.ValueString())
 		if err != nil {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read people, got error: %s", err))
-			return
-		}
-
-		if httpResp.StatusCode >= 400 {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read people, got HTTP status: %d", httpResp.StatusCode))
-			return
-		}
-
-		defer httpResp.Body.Close()
-
-		respBody, err := io.ReadAll(httpResp.Body)
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read response body, got error: %s", err))
-			return
-		}
-
-		tflog.Info(ctx, fmt.Sprintf("Read data from API %#v", respBody))
-
-		err = json.Unmarshal(respBody, &person)
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to parse JSON response, got error: %s", err))
-			return
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read person, got error: %s", err.Error()))
 		}
 	}
 
-	tflog.Info(ctx, "Fetched data from people API")
+	tflog.Info(ctx, fmt.Sprintf("Read data from API %#v", person))
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
