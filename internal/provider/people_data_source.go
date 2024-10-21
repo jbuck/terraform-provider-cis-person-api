@@ -129,7 +129,7 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	// save into the Terraform state.
 	data.Id = types.StringValue(person.UserID.Value)
 
-	data.GitHub_Username = types.StringValue(person.Usernames.Values["HACK#GITHUB"].(string))
+	data.GitHub_Username = types.StringValue(person.Usernames.Values.GitHubUsername)
 	data.Username = types.StringValue(person.PrimaryUsername.Value)
 
 	// Write logs using the tflog package

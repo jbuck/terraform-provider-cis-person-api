@@ -129,9 +129,16 @@ type IdentitiesAttributesValuesArray struct {
 }
 
 type UsernamesAttributeValuesObject struct {
-	Metadata  Metadata               `json:"metadata"`
-	Signature Signature              `json:"signature"`
-	Values    map[string]interface{} `json:"values"`
+	Metadata  Metadata           `json:"metadata"`
+	Signature Signature          `json:"signature"`
+	Values    UsernamesAttribute `json:"values"`
+}
+
+type UsernamesAttribute struct {
+	BugzillaMail   string `json:"HACK#BMOMAIL,omitempty"`
+	GitHubUsername string `json:"HACK#GITHUB,omitempty"`
+	LDAPPOSIXID    string `json:"LDAP-posix_id,omitempty"`
+	LDAPPOSIXIID   string `json:"LDAP-posix_uid,omitempty"`
 }
 
 type StandardAttributeValues struct {
