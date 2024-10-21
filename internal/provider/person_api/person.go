@@ -27,7 +27,7 @@ type Person struct {
 	Timezone          StandardAttributeString         `json:"timezone"`
 	Uris              StandardAttributeValues         `json:"uris"`
 	UserID            StandardAttributeString         `json:"user_id"`
-	Usernames         StandardAttributeValues         `json:"usernames"`
+	Usernames         UsernamesAttributeValuesObject  `json:"usernames"`
 	UUID              StandardAttributeString         `json:"uuid"`
 }
 
@@ -126,6 +126,12 @@ type IdentitiesAttributesValuesArray struct {
 	MozillaLDAPPrimaryEmail        *StandardAttributeString `json:"mozilla_ldap_primary_email,omitempty"`
 	MozillaPOSIXID                 *StandardAttributeString `json:"mozilla_posix_id,omitempty"`
 	MozilliansorgID                *StandardAttributeString `json:"mozilliansorg_id,omitempty"`
+}
+
+type UsernamesAttributeValuesObject struct {
+	Metadata  Metadata               `json:"metadata"`
+	Signature Signature              `json:"signature"`
+	Values    map[string]interface{} `json:"values"`
 }
 
 type StandardAttributeValues struct {

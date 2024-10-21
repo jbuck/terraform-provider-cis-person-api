@@ -27,9 +27,10 @@ type PeopleDataSource struct {
 
 // PeopleDataSourceModel describes the data source data model.
 type PeopleDataSourceModel struct {
-	Email    types.String `tfsdk:"email"`
-	Id       types.String `tfsdk:"id"`
-	Username types.String `tfsdk:"username"`
+	Email           types.String `tfsdk:"email"`
+	GitHub_Username types.String `tfsdk:"github_username"`
+	Id              types.String `tfsdk:"id"`
+	Username        types.String `tfsdk:"username"`
 }
 
 func (d *PeopleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -44,6 +45,10 @@ func (d *PeopleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 		Attributes: map[string]schema.Attribute{
 			"email": schema.StringAttribute{
 				MarkdownDescription: "People email address",
+				Optional:            true,
+			},
+			"github_username": schema.StringAttribute{
+				MarkdownDescription: "GitHub username",
 				Optional:            true,
 			},
 			"id": schema.StringAttribute{
@@ -122,7 +127,10 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	data.Id = types.StringValue("example-id")
+	data.Id = types.StringValue(person.UserID.Value)
+
+	data.GitHub_Username = types.StringValue(person.Usernames.Values["HACK#GITHUB"].(string))
+	data.Username = types.StringValue(person.PrimaryUsername.Value)
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
