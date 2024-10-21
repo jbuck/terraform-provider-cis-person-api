@@ -147,8 +147,13 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 		ClientSecret: auth0_client_secret,
 		TokenURL:     auth0_endpoint,
 		Scopes: []string{
+			"classification:public",
 			"classification:workgroup",
+			"display:none",
+			"display:public",
 			"display:authenticated",
+			"display:vouched",
+			"display:staff",
 		},
 		EndpointParams: url.Values{"audience": {"api.sso.mozilla.com"}},
 	}
@@ -179,21 +184,17 @@ func (p *CISProvider) Configure(ctx context.Context, req provider.ConfigureReque
 }
 
 func (p *CISProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewExampleResource,
-	}
+	return []func() resource.Resource{}
 }
 
 func (p *CISProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewExampleDataSource,
+		NewPeopleDataSource,
 	}
 }
 
 func (p *CISProvider) Functions(ctx context.Context) []func() function.Function {
-	return []func() function.Function{
-		NewExampleFunction,
-	}
+	return []func() function.Function{}
 }
 
 func New(version string) func() provider.Provider {

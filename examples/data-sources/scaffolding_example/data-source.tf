@@ -8,6 +8,10 @@ terraform {
 
 provider "cis" {}
 
-data "cis_example" "example" {
-  configurable_attribute = "some-value"
+data "cis_people" "example" {
+  email = "jbuckley@mozilla.com"
+}
+
+output "example" {
+  value = data.cis_people.example
 }
