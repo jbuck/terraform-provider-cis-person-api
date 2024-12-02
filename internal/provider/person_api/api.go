@@ -89,5 +89,12 @@ func (client *Client) GetPersonByEmail(ctx context.Context, email string) (*Pers
 		return nil, err
 	}
 
+	// Convert map keys into a list of strings
+	keys := make([]string, 0, len(person.AccessInformation.Mozilliansorg.Values))
+	for key := range person.AccessInformation.Mozilliansorg.Values {
+		keys = append(keys, key)
+	}
+	person.AccessInformation.Mozilliansorg.List = keys
+
 	return &person, nil
 }

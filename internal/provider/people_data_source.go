@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/datasourcevalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -27,10 +28,11 @@ type PeopleDataSource struct {
 
 // PeopleDataSourceModel describes the data source data model.
 type PeopleDataSourceModel struct {
-	Email           types.String `tfsdk:"email"`
-	GitHub_Username types.String `tfsdk:"github_username"`
-	Id              types.String `tfsdk:"id"`
-	Username        types.String `tfsdk:"username"`
+	Email                types.String `tfsdk:"email"`
+	GitHub_Username      types.String `tfsdk:"github_username"`
+	Id                   types.String `tfsdk:"id"`
+	Mozilliansorg_Groups types.List   `tfsdk:"mozilliansorg_groups"`
+	Username             types.String `tfsdk:"username"`
 }
 
 func (d *PeopleDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -54,6 +56,11 @@ func (d *PeopleDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 			"id": schema.StringAttribute{
 				MarkdownDescription: "People user identifier",
 				Optional:            true,
+			},
+			"mozilliansorg_groups": schema.ListAttribute{
+				ElementType:         types.StringType,
+				MarkdownDescription: "Mozilliansorg groups the user is in",
+				Computed:            true,
 			},
 			"username": schema.StringAttribute{
 				MarkdownDescription: "People username",
@@ -115,6 +122,7 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	var person *person_api.Person
 	var err error
+	var diags diag.Diagnostics
 
 	if data.Email.ValueString() != "" {
 		person, err = d.client.GetPersonByEmail(ctx, data.Email.ValueString())
@@ -130,6 +138,10 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	data.Id = types.StringValue(person.UserID.Value)
 
 	data.GitHub_Username = types.StringValue(person.Usernames.Values.GitHubUsername)
+	data.Mozilliansorg_Groups, diags = types.ListValueFrom(ctx, types.StringType, person.AccessInformation.Mozilliansorg.List)
+	for _, d := range diags {
+		resp.Diagnostics.Append(d)
+	}
 	data.Username = types.StringValue(person.PrimaryUsername.Value)
 
 	// Write logs using the tflog package
@@ -138,4 +150,8 @@ func (d *PeopleDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
