@@ -21,3 +21,7 @@ People data source
 - `github_username` (String) GitHub username
 - `id` (String) People user identifier
 - `username` (String) People username
+
+### Read-Only
+
+- `mozilliansorg_groups` (List of String) Mozilliansorg groups the user is in
